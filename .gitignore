@@ -1,0 +1,11 @@
+/target/
+*.class
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Operating system metadata
+.DS_Store
+Thumbs.db
