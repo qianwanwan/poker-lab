@@ -4,10 +4,12 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -78,5 +80,61 @@ class DeckTest {
         assertEquals(52, initialSnapshot.size());
         assertEquals(51, deck.size());
         assertEquals(51, deck.cards().size());
+    }
+
+    @Test
+    void shuffleReordersRemainingCardsWithoutChangingContents() {
+        Deck deck = new Deck();
+        for (int i = 0; i < 3; i++) {
+            deck.draw();
+        }
+        List<Card> snapshot = deck.cards();
+        Set<Card> cardSet = new HashSet<>(snapshot);
+        deck.shuffle(new Random(42));
+        assertEquals(49, deck.size());
+        assertEquals(cardSet, new HashSet<>(deck.cards()));
+        // 固定种子 42 在当前 49 张牌的序列上会改变顺序，用于发现没有实际洗牌的实现。
+        assertNotEquals(snapshot, deck.cards());
+    }
+
+    @Test
+    void sameSeedAndStateProduceSameShuffle() {
+        Deck deck1 = new Deck();
+        Deck deck2 = new Deck();
+        // Random 在使用时会推进内部状态，因此这里分别创建两个随机源。
+        deck1.shuffle(new Random(42));
+        deck2.shuffle(new Random(42));
+        assertEquals(deck1.cards(), deck2.cards());
+    }
+
+    @Test
+    void shufflingEmptyDeckDoesNotChangeState() {
+        Deck deck = new Deck();
+        for (int i = 0; i < 52; i++) {
+            deck.draw();
+        }
+        deck.shuffle(new Random(42));
+        assertEquals(0, deck.size());
+    }
+
+    @Test
+    void shufflingSingleCardDeckDoesNotChangeState() {
+        Deck deck = new Deck();
+        for (int i = 0; i < 51; i++) {
+            deck.draw();
+        }
+        List<Card> snapshot = deck.cards();
+        deck.shuffle(new Random(42));
+        assertEquals(1, deck.size());
+        assertEquals(snapshot, deck.cards());
+    }
+
+    @Test
+    void shuffleRejectsNullRandomWithoutChangingState() {
+        Deck deck = new Deck();
+        List<Card> snapshot = deck.cards();
+        assertThrows(NullPointerException.class, () -> deck.shuffle(null));
+        assertEquals(snapshot, deck.cards());
+        assertEquals(52, deck.size());
     }
 }
